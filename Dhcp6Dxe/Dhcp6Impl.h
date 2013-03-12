@@ -21,6 +21,7 @@
 
 #include <Protocol/Dhcp6.h>
 #include <Protocol/Udp6.h>
+#include <Protocol/Ip6Config.h>
 #include <Protocol/ServiceBinding.h>
 #include <Protocol/DriverBinding.h>
 
@@ -246,7 +247,7 @@ struct _DHCP6_INSTANCE {
   UINT8                         AdPref;
   EFI_IPv6_ADDRESS              *Unicast;
   volatile EFI_STATUS           UdpSts;
-  BOOLEAN                       InDestory;
+  BOOLEAN                       InDestroy;
   BOOLEAN                       MediaPresent;
   UINT64                        StartTime;
 };
@@ -260,6 +261,7 @@ struct _DHCP6_SERVICE {
   EFI_HANDLE                    Image;
   EFI_SERVICE_BINDING_PROTOCOL  ServiceBinding;
   EFI_SIMPLE_NETWORK_PROTOCOL   *Snp;
+  EFI_IP6_CONFIG_PROTOCOL       *Ip6Cfg;
   EFI_DHCP6_DUID                *ClientId;
   UDP_IO                        *UdpIo;
   UINT32                        Xid;

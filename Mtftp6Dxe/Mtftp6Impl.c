@@ -635,7 +635,7 @@ EfiMtftp6Poll (
   Instance = MTFTP6_INSTANCE_FROM_THIS (This);
 
   //
-  // Check the instance whether configured or in destory.
+  // Check the instance whether configured or in destroy.
   //
   if (Instance->Config == NULL) {
     return EFI_NOT_STARTED;

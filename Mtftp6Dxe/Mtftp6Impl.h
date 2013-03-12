@@ -95,7 +95,7 @@ struct _MTFTP6_INSTANCE {
   EFI_TPL                       OldTpl;
   BOOLEAN                       IsTransmitted;
   BOOLEAN                       IsMaster;
-  BOOLEAN                       InDestory;
+  BOOLEAN                       InDestroy;
 };
 
 //

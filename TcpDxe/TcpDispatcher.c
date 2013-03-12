@@ -1,7 +1,7 @@
 /** @file
   The implementation of a dispatch routine for processing TCP requests.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -334,6 +334,7 @@ TcpFlushPcb (
   NetbufFreeList (&Tcb->SndQue);
   NetbufFreeList (&Tcb->RcvQue);
   Tcb->State = TCP_CLOSED;
+  Tcb->RemoteIpZero = FALSE;
 }
 
 /**
@@ -400,22 +401,6 @@ TcpAttachPcb (
     IpIoRemoveIp (IpIo, Tcb->IpInfo);
     return Status;
   }
-
-  //
-  // Open the new created IP instance BY_CHILD.
-  //
-  Status = gBS->OpenProtocol (
-                  Tcb->IpInfo->ChildHandle,
-                  IpProtocolGuid,
-                  &Ip,
-                  IpIo->Image,
-                  Sk->SockHandle,
-                  EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER
-                  );
-  if (EFI_ERROR (Status)) {
-    IpIoRemoveIp (IpIo, Tcb->IpInfo);
-    return Status;
-  }
   
   InitializeListHead (&Tcb->List);
   InitializeListHead (&Tcb->SndQue);
@@ -455,16 +440,6 @@ TcpDetachPcb (
   ASSERT (Tcb != NULL);
 
   TcpFlushPcb (Tcb);
-
-  //
-  // Close the IP protocol.
-  //
-  gBS->CloseProtocol (
-         Tcb->IpInfo->ChildHandle,
-         IpProtocolGuid,
-         ProtoData->TcpService->IpIo->Image,
-         Sk->SockHandle
-         );
 
   //
   // Close the IP protocol.
@@ -779,6 +754,10 @@ TcpConfigurePcb (
 
   if (Sk->IpVersion == IP_VERSION_6) {
     Tcb->Tick          = TCP6_REFRESH_NEIGHBOR_TICK;
+
+    if (NetIp6IsUnspecifiedAddr (&Tcb->RemoteEnd.Ip.v6)) {
+      Tcb->RemoteIpZero = TRUE;
+    }
   }
 
   TcpInsertTcb (Tcb);

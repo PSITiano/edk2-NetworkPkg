@@ -81,7 +81,7 @@ Dhcp6ConfigureUdpIo (
 
 
 /**
-  Destory the Dhcp6 service. The Dhcp6 service may be partly initialized,
+  Destroy the Dhcp6 service. The Dhcp6 service may be partly initialized,
   or partly destroyed. If a resource is destroyed, it is marked as such in
   case the destroy failed and being called again later.
 
@@ -94,7 +94,7 @@ Dhcp6DestroyService (
   )
 {
   //
-  // All children instances should have been already destoryed here.
+  // All children instances should have been already destroyed here.
   //
   ASSERT (Service->NumOfChild == 0);
 
@@ -131,6 +131,7 @@ Dhcp6CreateService (
   )
 {
   DHCP6_SERVICE             *Dhcp6Srv;
+  EFI_STATUS                Status;
 
   *Service = NULL;
   Dhcp6Srv = AllocateZeroPool (sizeof (DHCP6_SERVICE));
@@ -162,6 +163,19 @@ Dhcp6CreateService (
     &gDhcp6ServiceBindingTemplate,
     sizeof (EFI_SERVICE_BINDING_PROTOCOL)
     );
+
+  //
+  // Locate Ip6->Ip6Config and store it for get IP6 Duplicate Address Detection transmits.
+  //
+  Status = gBS->HandleProtocol (
+                  Controller,
+                  &gEfiIp6ConfigProtocolGuid,
+                  (VOID **) &Dhcp6Srv->Ip6Cfg
+                  );
+  if (EFI_ERROR (Status)) {
+    FreePool (Dhcp6Srv);
+    return Status;
+  }
 
   //
   // Generate client Duid: If SMBIOS system UUID is located, generate DUID in DUID-UUID format.
@@ -278,7 +292,7 @@ Dhcp6CreateInstance (
   Dhcp6Ins->Signature       = DHCP6_INSTANCE_SIGNATURE;
   Dhcp6Ins->UdpSts          = EFI_ALREADY_STARTED;
   Dhcp6Ins->Service         = Service;
-  Dhcp6Ins->InDestory       = FALSE;
+  Dhcp6Ins->InDestroy       = FALSE;
   Dhcp6Ins->MediaPresent    = TRUE;
 
   CopyMem (
@@ -563,7 +577,7 @@ Dhcp6DriverBindingStop (
 
   if (NumberOfChildren == 0 && IsListEmpty (&Service->Child)) {
     //
-    // Destory the service itself if no child instance left.
+    // Destroy the service itself if no child instance left.
     //
     Status = gBS->UninstallProtocolInterface (
                     NicHandle,
@@ -755,13 +769,13 @@ Dhcp6ServiceBindingDestroyChild (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (Instance->InDestory) {
+  if (Instance->InDestroy) {
     return EFI_SUCCESS;
   }
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
-  Instance->InDestory = TRUE;
+  Instance->InDestroy = TRUE;
 
   Status = gBS->CloseProtocol (
                   Service->UdpIo->UdpHandle,
@@ -771,7 +785,7 @@ Dhcp6ServiceBindingDestroyChild (
                   );
 
   if (EFI_ERROR (Status)) {
-    Instance->InDestory = FALSE;
+    Instance->InDestroy = FALSE;
     gBS->RestoreTPL (OldTpl);
     return Status;
   }
@@ -787,7 +801,7 @@ Dhcp6ServiceBindingDestroyChild (
                   );
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
   if (EFI_ERROR (Status)) {
-    Instance->InDestory = FALSE;
+    Instance->InDestroy = FALSE;
     gBS->RestoreTPL (OldTpl);
     return Status;
   }

@@ -94,7 +94,7 @@ Ip6DriverBindingSupported (
   Clean up an IP6 service binding instance. It releases all
   the resource allocated by the instance. The instance may be
   partly initialized, or partly destroyed. If a resource is
-  destroyed, it is marked as that in case the destory failed and
+  destroyed, it is marked as that in case the destroy failed and
   being called again later.
 
   @param[in]  IpSb               The IP6 service binding instance to clean up.
@@ -465,6 +465,18 @@ Ip6CreateService (
   // If there is any manual address, set it.
   //
   DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeManualAddress];
+  if (DataItem->Data.Ptr != NULL) {
+    DataItem->SetData (
+                &IpSb->Ip6ConfigInstance,
+                DataItem->DataSize,
+                DataItem->Data.Ptr
+                );
+  }
+
+  //
+  // If there is any gateway address, set it.
+  //
+  DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeGateway];
   if (DataItem->Data.Ptr != NULL) {
     DataItem->SetData (
                 &IpSb->Ip6ConfigInstance,
@@ -873,8 +885,8 @@ Ip6ServiceBindingDestroyChild (
 
   //
   // A child can be destroyed more than once. For example,
-  // Ip6DriverBindingStop will destory all of its children.
-  // when UDP driver is being stopped, it will destory all
+  // Ip6DriverBindingStop will destroy all of its children.
+  // when UDP driver is being stopped, it will destroy all
   // the IP child it opens.
   //
   if (IpInstance->InDestroy) {
